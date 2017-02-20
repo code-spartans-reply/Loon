@@ -8,16 +8,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -59,9 +54,9 @@ public class Main {
 		final Invocable jsEngine = (Invocable) baseEngine;
 
 		final List<Slot> allSlots = new LinkedList<>();
-//		parameters.getDatafarm().rows().forEach((item) -> {
-//			allSlots.addAll(item);
-//		});
+		 parameters.getDatafarm().rows().forEach((item) -> {
+		 allSlots.addAll(item);
+		 });
 
 		Solution result = (Solution) jsEngine.invokeFunction("allocateServerInFarm", allSlots, parameters.getServers());
 		return result;
@@ -108,8 +103,70 @@ public class Main {
 	}
 
 	private static Datafarm evaluteDatafarm(int datacenterRows, int rowSlots, List<Coordinate> unavailableSlots) {
-		return null;
-		// pippo
+		// devide unavailable slots: list of y coords for each x
+		// example: unavailable slots: (0, 3), (0, 6), (1, 2) become
+		// - 0 --> 3, 6
+		// - 1 --> 2
+
+		Map<Integer, List<Integer>> yForxMap = new HashMap<Integer, List<Integer>>();
+		for (Coordinate pair : unavailableSlots) {
+			Integer x = pair.getX();
+			List<Integer> ys = yForxMap.get(x);
+			if (ys == null) {
+				ys = new ArrayList<Integer>();
+			}
+			ys.add(pair.getY());
+			yForxMap.put(x, ys);
+		}
+
+		// new datafarm
+		Datafarm result = new Datafarm(datacenterRows);
+
+		// for every row, add spaces
+		for (int i = 0; i < datacenterRows; i++) {
+
+			List<Slot> slots = new ArrayList<Slot>();
+
+			// get ys for row
+			List<Integer> ys = yForxMap.get(i);
+
+			// no holes in current row --> 1 slot
+			if (ys == null) {
+				Slot slot = new Slot(0, rowSlots - 1);
+				slots.add(slot);
+			} else {
+
+				int start = 0;
+				int size = 0;
+
+				int lastHole = -1;
+				for (int y : ys) {
+					start = lastHole + 1;
+					size = (y - start);
+					if (size != 0) {
+						slots.add(createSlot(start, size));
+					}
+					lastHole = y;
+				}
+				// last in row
+				if (lastHole < rowSlots) {
+					slots.add(createSlot(lastHole + 1, rowSlots - (lastHole + 1)));
+					;
+				}
+
+			}
+
+			// add all
+			result.setSlotsSpaceAtRows(i, slots);
+
+		}
+
+		return result;
+
+	}
+
+	private static Slot createSlot(int start, int size) {
+		return new Slot(start, size);
 	}
 
 }

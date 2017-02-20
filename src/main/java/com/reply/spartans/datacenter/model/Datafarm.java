@@ -1,6 +1,7 @@
 package com.reply.spartans.datacenter.model;
 
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -26,6 +27,10 @@ public class Datafarm {
 		this.serverRows[index] = Arrays.asList(spaces);
 	}
 	
+    public void setSlotsSpaceAtRows(int index, List<Slot> spaces) {
+        this.serverRows[index] = new ArrayList<>(spaces);
+  }
+
 	public Stream<List<Slot>> rows() {
 		return Arrays.stream(serverRows);
 	}

@@ -132,7 +132,7 @@ public class Main {
 
 			// no holes in current row --> 1 slot
 			if (ys == null) {
-				Slot slot = new Slot(0, rowSlots - 1);
+				Slot slot = new Slot(0, rowSlots);
 				slots.add(slot);
 			} else {
 

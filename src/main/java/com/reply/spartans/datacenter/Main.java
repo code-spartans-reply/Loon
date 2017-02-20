@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.*;
 
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Multimaps;
 import com.reply.spartans.datacenter.model.Coordinate;
 import com.reply.spartans.datacenter.model.Datafarm;
 import com.reply.spartans.datacenter.model.ProblemParameters;
@@ -77,7 +79,6 @@ public class Main {
 	}
 
 	private static Datafarm evaluteDatafarm(int datacenterRows, int rowSlots, List<Coordinate> unavailableSlots) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

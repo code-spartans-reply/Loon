@@ -3,4 +3,13 @@
   <groupId>com.reply.spartans</groupId>
   <artifactId>datacenter</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  
+  
+  <dependencies>
+  	<dependency>
+  		<groupId>ch.qos.logback</groupId>
+  		<artifactId>logback-classic</artifactId>
+  		<version>1.2.1</version>
+  	</dependency>
+  </dependencies>
 </project>

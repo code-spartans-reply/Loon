@@ -4,6 +4,10 @@ package com.reply.spartans.datacenter.model;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Datafarm model: constituted by different rows, each with one one or more space slots
+ */
+
 public class Datafarm {
 	
 	final List<Integer>[] serverRows;

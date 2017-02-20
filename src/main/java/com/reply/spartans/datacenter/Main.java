@@ -59,6 +59,7 @@ public class Main {
 			final Path outputFile = FileSystems.getDefault()
 					.getPath(args[1], inputFile.getFileName().toString().replaceAll("\\.in$", ".out")).toAbsolutePath();
 
+
 			final ProblemParameters parameters = Main.readInputParametersFrom(inputFile.toString());
 
 			final Solution result = Main.processSolution(parameters);

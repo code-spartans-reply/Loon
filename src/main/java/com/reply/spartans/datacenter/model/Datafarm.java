@@ -34,7 +34,10 @@ public class Datafarm {
 	public int getRowsNumber() {
 		return this.serverRows.length;
 	}
-
+	public int getRows() {
+		return serverRows.length;
+	}
+	
 	public Stream<List<Slot>> rows() {
 		return Arrays.stream(serverRows);
 	}

@@ -14,7 +14,7 @@ function maxServer(spots, servers) {
     }
     return getMax;
 }
-
+maxServer();
 
 function allocateServerInFarm(datafarm, servers) {
 	

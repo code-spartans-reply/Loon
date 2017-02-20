@@ -37,14 +37,14 @@ public class Solution {
 	public String getSolution() {
 		StringBuffer output = new StringBuffer();
 		final String unassigned = "x";
-		final String lineSeparator = "\n";
+		final String lineSeparator = System.getProperty("line.separator");
 		
 		for (ServerAssignment assignment : assignments) {
 			if (assignment.getPool() == null) {
 				output.append(unassigned);
 			} else {
-				int row = assignment.getPosition().getY();
-				int slot = assignment.getPosition().getX();
+				int row = assignment.getPosition().getX();
+				int slot = assignment.getPosition().getY();
 				int poolId = assignment.getPool().getPoolId();
 				output.append(row + " " + slot + " " + poolId);
 			}

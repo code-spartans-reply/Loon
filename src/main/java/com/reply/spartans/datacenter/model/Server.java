@@ -13,13 +13,11 @@ public class Server {
 	
 	private final int size;
 	
-	private final double quality;
 
 	public Server(int serverId, int capacity, int size) {
 		this.serverId = serverId;
 		this.capacity = capacity;
 		this.size = size;
-		this.quality = capacity/size;
 	}
 
 	public int getServerId() {
@@ -35,7 +33,30 @@ public class Server {
 	}
 	
 	public double getQuality() {
-		return this.quality;
+		return  capacity/size;
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		
+		if (! (obj instanceof Server)) {
+			return false;
+		}
+		
+		final Server other = (Server) obj;
+		return this.serverId == other.serverId;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Integer.hashCode(this.serverId);
+	}
+	
+	@Override
+	public String toString() {
+		return "[Server " + this.serverId + ", cap = " + this.capacity + ", size = " + this.size + "]";
+	}
 }

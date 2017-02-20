@@ -3,20 +3,29 @@ package com.reply.spartans.datacenter;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
-import javax.script.Invocable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import org.slf4j.Logger;
@@ -24,8 +33,12 @@ import org.slf4j.LoggerFactory;
 
 import com.reply.spartans.datacenter.model.Coordinate;
 import com.reply.spartans.datacenter.model.Datafarm;
+import com.reply.spartans.datacenter.model.Pool;
 import com.reply.spartans.datacenter.model.ProblemParameters;
+import com.reply.spartans.datacenter.model.RemainingSlotSpace;
 import com.reply.spartans.datacenter.model.Server;
+import com.reply.spartans.datacenter.model.ServerAssignment;
+import com.reply.spartans.datacenter.model.ServerQualityComparator;
 import com.reply.spartans.datacenter.model.Slot;
 import com.reply.spartans.datacenter.model.Solution;
 
@@ -39,31 +52,180 @@ public class Main {
 			return;
 		}
 
-		final ProblemParameters parameters = Main.readInputParametersFrom(args[0]);
+		final Path path = FileSystems.getDefault().getPath(args[0]);
+		final DirectoryStream<Path> inputFilesStream = Files.newDirectoryStream(path,
+				file -> file.toString().endsWith(".in"));
+		for (final Path inputFile : inputFilesStream) {
+			final Path outputFile = FileSystems.getDefault()
+					.getPath(args[1], inputFile.getFileName().toString().replaceAll("\\.in$", ".out")).toAbsolutePath();
 
-		final Solution result = Main.processSolution(parameters);
+			final ProblemParameters parameters = Main.readInputParametersFrom(inputFile.toString());
 
-		Main.renderOutput(result, parameters);
+			final Solution result = Main.processSolution(parameters);
+
+			com.google.common.io.Files.createParentDirs(outputFile.toFile());
+			Main.renderOutput(result, parameters, outputFile.toString());
+		}
 	}
 
 	private static Solution processSolution(ProblemParameters parameters)
 			throws ScriptException, NoSuchMethodException {
-		ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
-		ScriptEngine baseEngine = scriptEngineManager.getEngineByName("nashorn");
-		baseEngine.eval(new InputStreamReader(Main.class.getClassLoader().getResourceAsStream("main.js")));
-		final Invocable jsEngine = (Invocable) baseEngine;
+		final Datafarm datafarm = parameters.getDatafarm();
+		// ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
+		// ScriptEngine baseEngine =
+		// scriptEngineManager.getEngineByName("nashorn");
+		// baseEngine.eval(new
+		// InputStreamReader(Main.class.getClassLoader().getResourceAsStream("main.js")));
+		// final Invocable jsEngine = (Invocable) baseEngine;
+		//
+		// Solution result = (Solution)
+		// jsEngine.invokeFunction("allocateServerInFarm",
+		// parameters.getDatafarm(),
+		// parameters.getServers());
 
-		final List<Slot> allSlots = new LinkedList<>();
-		 parameters.getDatafarm().rows().forEach((item) -> {
-		 allSlots.addAll(item);
-		 });
+		final Map<Slot, List<Server>> assignments = assignServersToSlots(parameters, datafarm);
 
-		Solution result = (Solution) jsEngine.invokeFunction("allocateServerInFarm", allSlots, parameters.getServers());
-		return result;
+		List<List<Server>> serversPerRow = datafarm.rows()
+				.map(slotList -> slotList.stream()
+						.flatMap((slot) -> assignments.entrySet().stream()
+								.filter((assignment) -> assignment.getKey().equals(slot))
+								.flatMap(assignment -> assignment.getValue().stream()))
+						.collect(Collectors.toList()))
+				.collect(Collectors.toList());
+		final List<Pool> pools = assignServersToPools(serversPerRow, parameters.getTargetPoolsNumber());
+
+		final Map<Server, Pool> serverToPool = new HashMap<>();
+		pools.forEach(pool -> {
+			pool.getServers().forEach(server -> {
+				serverToPool.put(server, pool);
+			});
+		});
+
+		// draw server assignment
+		final SortedSet<ServerAssignment> solution = new TreeSet<>(
+				(first, second) -> first.getServer().getServerId() - second.getServer().getServerId());
+		for (int currentRowIndex = 0; currentRowIndex < datafarm.getRowsNumber(); ++currentRowIndex) {
+			final StringBuilder row = new StringBuilder();
+			int currentSlotNumber = 0;
+			for (final Slot slot : datafarm.getServerRow(currentRowIndex)) {
+				while (currentSlotNumber < slot.getStartingColumn()) {
+					row.append("|    X    |");
+					++currentSlotNumber;
+				}
+
+				if (assignments.containsKey(slot)) {
+					for (final Server server : assignments.get(slot)) {
+						final int lastServerSlot = currentSlotNumber + server.getSize();
+						solution.add(new ServerAssignment(new Coordinate(currentRowIndex, currentSlotNumber), server,
+								serverToPool.get(server)));
+						while (currentSlotNumber < lastServerSlot) {
+							// row.append("| s" + server.getServerId() + " p " +
+							// serverToPool.get(server).getPoolId() + " |");
+							row.append(String.format("| s%2d p%2d |", server.getServerId(),
+									serverToPool.get(server).getPoolId()));
+							++currentSlotNumber;
+						}
+					}
+				}
+			}
+			while (currentSlotNumber < parameters.getRowSlots()) {
+				row.append("|    X    |");
+				++currentSlotNumber;
+			}
+			System.out.println(row);
+		}
+
+		final Set<Server> unassignedServers = new HashSet<>(parameters.getServers());
+		unassignedServers.removeAll(solution.stream().map(ServerAssignment::getServer).collect(Collectors.toSet()));
+		unassignedServers.forEach(server -> solution.add(new ServerAssignment(null, server, null)));
+
+		return new Solution(solution);
 	}
 
-	private static void renderOutput(Solution result, ProblemParameters parameters) {
-		// TODO Auto-generated method stub
+	private static List<Pool> assignServersToPools(List<List<Server>> serversPerRow, int targetPoolsNumber) {
+
+		List<SortedSet<Server>> sortedServersPerRow = serversPerRow.stream().map(serverList -> {
+			final SortedSet<Server> serversByQuality = new TreeSet<>(new ServerQualityComparator());
+			serversByQuality.addAll(serverList);
+			return serversByQuality;
+		}).collect(Collectors.toList());
+
+		final SortedSet<Pool> pools = new TreeSet<>((first, second) -> {
+			int comparison = first.getCapacity() - second.getCapacity();
+			return comparison != 0 ? comparison : first.equals(second) ? 0 : -1;
+		});
+		for (int i = 0; i < targetPoolsNumber; ++i) {
+			pools.add(new Pool(i));
+		}
+
+		while (!sortedServersPerRow.isEmpty()) {
+			for (Iterator<SortedSet<Server>> rowIterator = sortedServersPerRow.iterator(); rowIterator.hasNext();) {
+				SortedSet<Server> rowServers = rowIterator.next();
+				for (final Pool pool : pools) {
+					if (rowServers.isEmpty() == false) {
+						final Server mostCapableServer = rowServers.first();
+						pool.assignServer(mostCapableServer);
+						rowServers.remove(mostCapableServer);
+					}
+				}
+				final Set<Pool> stash = new HashSet<>(pools);
+				pools.clear();
+				pools.addAll(stash);
+				if (rowServers.isEmpty()) {
+					rowIterator.remove();
+				}
+			}
+		}
+
+		return new ArrayList<>(pools);
+	}
+
+	private static Map<Slot, List<Server>> assignServersToSlots(ProblemParameters parameters, final Datafarm datafarm) {
+		final SortedSet<RemainingSlotSpace> slotsByDimension = datafarm.rows().flatMap((item) -> item.stream())
+				.map(RemainingSlotSpace::new).collect(Collectors.toCollection(() -> new TreeSet<>((first, second) -> {
+					int comparison = first.getRemainingSpace() - second.getRemainingSpace();
+					return comparison != 0 ? comparison : first.getBaseSlot().equals(second.getBaseSlot()) ? 0 : -1;
+				})));
+
+		final SortedSet<Server> serversByQuality = new TreeSet<>(new ServerQualityComparator());
+		serversByQuality.addAll(parameters.getServers());
+
+		final Map<Slot, List<Server>> assignments = new HashMap<>();
+		while ((serversByQuality.isEmpty() || serversByQuality.isEmpty()) == false) {
+			// assign the largest server to the largest slot
+			final Server largestServer = serversByQuality.first();
+
+			final Optional<RemainingSlotSpace> possibleLargestFittingSlot = slotsByDimension.stream()
+					.filter((slot) -> slot.getRemainingSpace() >= largestServer.getSize()).findFirst();
+			if (possibleLargestFittingSlot.isPresent()) {
+				final RemainingSlotSpace largestSlot = possibleLargestFittingSlot.get();
+
+				final List<Server> currentSlotAssignment;
+				if (assignments.containsKey(largestSlot.getBaseSlot())) {
+					currentSlotAssignment = assignments.get(largestSlot.getBaseSlot());
+				} else {
+					currentSlotAssignment = new LinkedList<>();
+				}
+				currentSlotAssignment.add(largestServer);
+				assignments.put(largestSlot.getBaseSlot(), currentSlotAssignment);
+
+				slotsByDimension.remove(largestSlot);
+				largestSlot.allocate(largestServer.getSize());
+				if (!largestSlot.isFull()) {
+					slotsByDimension.add(largestSlot);
+				}
+			}
+			serversByQuality.remove(largestServer);
+		}
+		return assignments;
+	}
+
+	private static void renderOutput(Solution result, ProblemParameters parameters, String filename)
+			throws IOException {
+		try (final PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(filename)))) {
+			writer.print(result.getSolution());
+			writer.flush();
+		}
 	}
 
 	private static ProblemParameters readInputParametersFrom(String filename)
@@ -76,7 +238,7 @@ public class Main {
 			final int rowSlots = inputData.nextInt();
 			final int unavailableDescriptorsNumber = inputData.nextInt();
 			final int targetPoolsNumber = inputData.nextInt();
-			final int serversNumber = inputData.nextInt();
+			/* final int serversNumber = */inputData.nextInt();
 
 			final List<Coordinate> unavailableSlots = new ArrayList<>(unavailableDescriptorsNumber);
 			for (int i = 0; i < unavailableDescriptorsNumber; ++i) {
@@ -97,7 +259,7 @@ public class Main {
 				}
 			}
 
-			problemParameters = new ProblemParameters(datafarm, servers, targetPoolsNumber);
+			problemParameters = new ProblemParameters(datafarm, servers, rowSlots, targetPoolsNumber);
 		}
 		return problemParameters;
 	}

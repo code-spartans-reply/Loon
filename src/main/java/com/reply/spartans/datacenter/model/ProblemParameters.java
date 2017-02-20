@@ -17,9 +17,12 @@ public class ProblemParameters {
 	
 	private final int targetPoolsNumber;
 
-	public ProblemParameters(Datafarm datafarm, Collection<Server> servers, int targetPoolNumber) {
+	private int rowSlots;
+
+	public ProblemParameters(Datafarm datafarm, Collection<Server> servers, int rowSlots, int targetPoolsNumber) {
 		this.datafarm = datafarm;
-		targetPoolsNumber = targetPoolNumber;
+		this.rowSlots = rowSlots;
+		this.targetPoolsNumber = targetPoolsNumber;
 		this.servers = ImmutableSet.copyOf(servers);
 	}
 	
@@ -33,5 +36,9 @@ public class ProblemParameters {
 	
 	public int getTargetPoolsNumber() {
 		return targetPoolsNumber;
+	}
+	
+	public int getRowSlots() {
+		return rowSlots;
 	}
 }

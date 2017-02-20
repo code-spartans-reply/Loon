@@ -27,6 +27,10 @@ public class Datafarm {
 		this.serverRows[index] = Arrays.asList(spaces);
 	}
 	
+	public int getRows() {
+		return serverRows.length;
+	}
+	
     public void setSlotsSpaceAtRows(int index, List<Slot> spaces) {
         this.serverRows[index] = new ArrayList<>(spaces);
   }

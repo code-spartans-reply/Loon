@@ -66,11 +66,12 @@ public class Main {
 			final Datafarm datafarm = evaluteDatafarm(datacenterRows, rowSlots, unavailableSlots);
 			
 			final List<Server> servers = new LinkedList<>();
+			int serverId = 0;
 			while (inputData.hasNextLine()) {
 				int size = inputData.nextInt();
 				int capacity = inputData.nextInt();
 				
-				servers.add(new Server(capacity, size));
+				servers.add(new Server(serverId++, capacity, size));
 			}
 			
 			problemParameters = new ProblemParameters(datafarm, servers, targetPoolsNumber);

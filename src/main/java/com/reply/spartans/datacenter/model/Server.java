@@ -7,18 +7,25 @@ package com.reply.spartans.datacenter.model;
 
 public class Server {
 
+	private final int serverId;
+	
 	private final int capacity;
 	
 	private final int size;
 	
 	private final double quality;
 
-	public Server(int capacity, int size) {
+	public Server(int serverId, int capacity, int size) {
+		this.serverId = serverId;
 		this.capacity = capacity;
 		this.size = size;
 		this.quality = capacity/size;
 	}
 
+	public int getServerId() {
+		return serverId;
+	}
+	
 	public int getSize() {
 		return size;
 	}

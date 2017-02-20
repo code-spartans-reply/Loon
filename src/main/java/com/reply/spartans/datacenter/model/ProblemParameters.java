@@ -5,6 +5,10 @@ import java.util.Set;
 
 import com.google.common.collect.ImmutableSet;
 
+/**
+ * Problems parameters, obtained after parsing the input file
+ */
+
 public class ProblemParameters {
 
 	private final Datafarm datafarm;

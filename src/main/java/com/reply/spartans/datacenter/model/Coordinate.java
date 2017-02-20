@@ -1,5 +1,9 @@
 package com.reply.spartans.datacenter.model;
 
+/**
+ * Position of a server in the data farm
+ */
+
 public class Coordinate {
 
 	private final int x;

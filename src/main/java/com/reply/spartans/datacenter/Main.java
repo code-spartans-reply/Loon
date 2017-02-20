@@ -1,19 +1,28 @@
-package eu.reply.hashcode2017.codespartans;
-
+package com.reply.spartans.datacenter;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.Scanner;
 
-import com.google.common.base.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import eu.reply.hashcode2017.codespartans.model.ProblemParameters;
-import eu.reply.hashcode2017.codespartans.model.Solution;
+import com.reply.spartans.datacenter.model.ProblemParameters;
+import com.reply.spartans.datacenter.model.Solution;
+
+import eu.reply.hashcode2017.codespartans.Main;
 
 public class Main {
 
-	public static void main(String[] args) throws Exception {
+	private static final Logger log = LoggerFactory.getLogger(Main.class);
+	
+	public static void main(String[] args) {
+		if (args.length != 2) {
+			log.error("Needs exactly two arguments: input file and output file");
+			return;
+		}
+
 		final ProblemParameters parameters = Main.readInputParametersFrom(args[0]);
 
 		final Solution result = Main.processSolution(parameters);
@@ -42,5 +51,6 @@ public class Main {
 		}
 		return problemParameters;
 	}
+
 
 }

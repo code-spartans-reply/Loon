@@ -3,13 +3,20 @@ package com.reply.spartans.datacenter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.*;
+
+import com.reply.spartans.datacenter.model.Coordinate;
+import com.reply.spartans.datacenter.model.Datafarm;
 import com.reply.spartans.datacenter.model.ProblemParameters;
+import com.reply.spartans.datacenter.model.Server;
 import com.reply.spartans.datacenter.model.Solution;
 
 public class Main {
@@ -45,10 +52,33 @@ public class Main {
 
 		ProblemParameters problemParameters = null;
 		try (final Scanner inputData = new Scanner(FileSystems.getDefault().getPath(filename), "UTF-8")) {
-
-			problemParameters = new ProblemParameters(null, null);
+			final int datacenterRows = inputData.nextInt();
+			final int rowSlots = inputData.nextInt();
+			final int unavailableDescriptorsNumber = inputData.nextInt();
+			final int targetPoolsNumber = inputData.nextInt();
+			
+			final List<Coordinate> unavailableSlots = new ArrayList<>(unavailableDescriptorsNumber);
+			for (int i = 0; i < unavailableDescriptorsNumber; ++i) {
+				unavailableSlots.add(new Coordinate(inputData.nextInt(), inputData.nextInt()));
+			}
+			final Datafarm datafarm = evaluteDatafarm(datacenterRows, rowSlots, unavailableSlots);
+			
+			final List<Server> servers = new LinkedList<>();
+			while (inputData.hasNextLine()) {
+				int size = inputData.nextInt();
+				int capacity = inputData.nextInt();
+				
+				servers.add(new Server(capacity, size));
+			}
+			
+			problemParameters = new ProblemParameters(datafarm, servers, targetPoolsNumber);
 		}
 		return problemParameters;
+	}
+
+	private static Datafarm evaluteDatafarm(int datacenterRows, int rowSlots, List<Coordinate> unavailableSlots) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

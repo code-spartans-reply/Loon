@@ -46,7 +46,7 @@ public class Main {
 		ProblemParameters problemParameters = null;
 		try (final Scanner inputData = new Scanner(FileSystems.getDefault().getPath(filename), "UTF-8")) {
 
-			problemParameters = new ProblemParameters();
+			problemParameters = new ProblemParameters(null, null);
 		}
 		return problemParameters;
 	}

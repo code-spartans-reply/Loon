@@ -37,5 +37,11 @@ public class Server {
 	public double getQuality() {
 		return this.quality;
 	}
+
+	@Override
+	public String toString() {
+		return "Server [serverId=" + serverId + ", capacity=" + capacity + ", size=" + size + ", quality=" + quality
+				+ "]";
+	}
 	
 }

@@ -14,7 +14,7 @@ function maxServer(spots, servers) {
     }
     return getMax;
 }
-
+maxServer();
 
 function allocateServerInFarm(spots, servers) {
 	return new com.reply.spartans.datacenter.model.Solution(null);

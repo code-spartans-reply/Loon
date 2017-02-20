@@ -6,7 +6,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.FileSystems;
+import java.io.*;
+import java.io.file.FileSystems;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -37,6 +38,27 @@ public class Main {
 		if (args.length != 2) {
 			log.error("Needs exactly two arguments: input file and output file");
 			return;
+		}
+
+		// create a script engine manager
+		ScriptEngineManager factory = new ScriptEngineManager();
+		// create JavaScript engine
+		ScriptEngine engine = factory.getEngineByName("JavaScript");
+
+		File javascriptFile = new File("resources/main.js");
+
+		FileReader fileReader = null;
+		try {
+			fileReader = new java.io.FileReader(javascriptFile);
+		}catch (FileNotFoundException fnf) {
+			fnf.printStackTrace();
+		}
+		if(null != fileReader) {
+			try {
+				System.out.println(engine.eval(fileReader));
+			}catch(ScriptException e) {
+				e.printStackTrace();
+			}
 		}
 
 		final ProblemParameters parameters = Main.readInputParametersFrom(args[0]);
